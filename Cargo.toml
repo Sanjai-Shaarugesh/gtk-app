@@ -1,0 +1,12 @@
+[package]
+name = "my-gtk-app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+async-channel = "2.3.1"
+env = "1.0.1"
+gio = "0.20.12"
+gtk = { version = "0.9.7", package = "gtk4", features = ["v4_12"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+tokio = "1.45.1"
