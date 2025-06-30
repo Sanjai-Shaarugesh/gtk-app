@@ -26,5 +26,6 @@
       <summary>Counter value</summary>
       <description>The current value of the counter</description>
     </key>
+
   </schema>
 </schemalist>

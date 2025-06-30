@@ -48,6 +48,9 @@ fn main() -> glib::ExitCode {
     let settings = Settings::new(APP_ID);
     let app = Application::builder().application_id(APP_ID).build();
 
+    gio::resources_register_include!("composite_templates_1.gresource")
+        .expect("Failed to register resources.");
+
     app.connect_activate(move |app| {
         let win = Window::new(app);
         build_ui(&win, app, &settings);
