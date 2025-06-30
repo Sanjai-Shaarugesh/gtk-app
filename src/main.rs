@@ -1,14 +1,26 @@
 use crate::glib::clone;
 use gio::Settings;
 use gtk::Align;
+use gtk::Label;
+use gtk::ListItem;
+use gtk::ListView;
+use gtk::NoSelection;
 use gtk::Orientation;
+use gtk::PolicyType;
+use gtk::ScrolledWindow;
+use gtk::SignalListItemFactory;
+use gtk::StringList;
+use gtk::StringObject;
 use gtk::Switch;
+use gtk::Widget;
 use gtk::prelude::*;
 use gtk::{Application, Button, glib};
 use std::cell::Cell;
 use std::rc::Rc;
 
 mod custom_window;
+mod integer_object;
+
 use custom_window::Window;
 // use std::thread;
 // use std::time::Duration;
@@ -168,6 +180,42 @@ fn build_ui(win: &Window, _app: &Application, settings: &Settings) {
     let switch_active = switch_1.is_active();
     println!("{}", switch_active);
 
+    // let list_box = gtk::ListBox::new();
+
+    // for number in 0..100 {
+    //     let label = gtk::Label::new(Some(&number.to_string()));
+    //     list_box.append(&label);
+    // }
+    let model: StringList = (0..=100_000).map(|number| number.to_string()).collect();
+
+    let factory = SignalListItemFactory::new();
+    factory.connect_setup(move |_, list_item| {
+        // Create label
+        let label = Label::new(None);
+        let list_item = list_item
+            .downcast_ref::<ListItem>()
+            .expect("Needs to be ListItem");
+        list_item.set_child(Some(&label));
+
+        // Bind `list_item->item->string` to `label->label`
+        list_item
+            .property_expression("item")
+            .chain_property::<StringObject>("string")
+            .bind(&label, "label", Widget::NONE);
+    });
+
+    let selection_model = NoSelection::new(Some(model));
+    let list_view = ListView::new(Some(selection_model), Some(factory));
+    list_view.set_vexpand(true);
+
+    let scrolled_window = ScrolledWindow::builder()
+        .hscrollbar_policy(PolicyType::Never) // Disable horizontal scrolling
+        .min_content_width(360)
+        .child(&list_view)
+        .build();
+    scrolled_window.set_vexpand(true);
+    scrolled_window.set_policy(PolicyType::Automatic, PolicyType::Automatic);
+
     let gtk_box = gtk::Box::builder()
         .orientation(Orientation::Vertical)
         .spacing(10)
@@ -177,6 +225,8 @@ fn build_ui(win: &Window, _app: &Application, settings: &Settings) {
         .margin_end(20)
         .homogeneous(false)
         .build();
+
+    gtk_box.set_vexpand(true);
 
     let button_box = gtk::Box::builder()
         .orientation(Orientation::Vertical)
@@ -271,15 +321,15 @@ fn build_ui(win: &Window, _app: &Application, settings: &Settings) {
         }
     ));
 
-    // let window = ApplicationWindow::builder()
-    //     .application(app)
-    //     .title("sanjai")
-    //     .child(&gtk_box)
-    //     .default_width(250)
-    //     .default_height(150)
-    //     .build();
+    let window = gtk::ApplicationWindow::builder()
+        .application(_app)
+        .title("sanjai")
+        .child(&scrolled_window)
+        .default_width(600)
+        .default_height(300)
+        .build();
 
-    // window.present();
+    window.present();
     win.set_child(Some(&gtk_box));
     win.set_default_size(300, 400);
 }
