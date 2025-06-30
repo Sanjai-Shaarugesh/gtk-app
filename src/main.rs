@@ -4,9 +4,12 @@ use gtk::Align;
 use gtk::Orientation;
 use gtk::Switch;
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, Button, glib};
+use gtk::{Application, Button, glib};
 use std::cell::Cell;
 use std::rc::Rc;
+
+mod custom_window;
+use custom_window::Window;
 // use std::thread;
 // use std::time::Duration;
 
@@ -33,11 +36,23 @@ fn main() -> glib::ExitCode {
     let settings = Settings::new(APP_ID);
     let app = Application::builder().application_id(APP_ID).build();
 
-    app.connect_activate(move |app| build_ui(app, &settings));
+    app.connect_activate(move |app| {
+        let win = Window::new(app);
+        build_ui(&win, app, &settings);
+        win.connect_close_request(clone!(
+            #[strong]
+            win,
+            move |_| {
+                win.save_window_size().ok();
+                glib::Propagation::Proceed
+            }
+        ));
+        win.present();
+    });
     app.run()
 }
 
-fn build_ui(app: &Application, settings: &Settings) {
+fn build_ui(win: &Window, _app: &Application, settings: &Settings) {
     let number = Rc::new(Cell::new(0));
 
     let (sender, receiver) = async_channel::bounded(1);
@@ -256,13 +271,15 @@ fn build_ui(app: &Application, settings: &Settings) {
         }
     ));
 
-    let window = ApplicationWindow::builder()
-        .application(app)
-        .title("sanjai")
-        .child(&gtk_box)
-        .default_width(250)
-        .default_height(150)
-        .build();
+    // let window = ApplicationWindow::builder()
+    //     .application(app)
+    //     .title("sanjai")
+    //     .child(&gtk_box)
+    //     .default_width(250)
+    //     .default_height(150)
+    //     .build();
 
-    window.present();
+    // window.present();
+    win.set_child(Some(&gtk_box));
+    win.set_default_size(300, 400);
 }
