@@ -1,23 +1,25 @@
-use glib::subclass::InitializingObject;
-use gtk::prelude::*;
-use gtk::subclass::prelude::*;
-use gtk::{CompositeTemplate, glib};
+use std::cell::RefCell;
 
-use crate::custom_button::CustomButton;
+use glib::subclass::InitializingObject;
+use gtk::subclass::prelude::*;
+use gtk::{CompositeTemplate, Entry, ListView, gio, glib};
 
 // Object holding the state
 #[derive(CompositeTemplate, Default)]
-#[template(resource = "/org/gtk_rs/example/window.ui")]
+#[template(resource = "/org/gtk_rs/Todo1/window.ui")]
 pub struct Window {
     #[template_child]
-    pub button: TemplateChild<CustomButton>,
+    pub entry: TemplateChild<Entry>,
+    #[template_child]
+    pub tasks_list: TemplateChild<ListView>,
+    pub tasks: RefCell<Option<gio::ListStore>>,
 }
 
 // The central trait for subclassing a GObject
 #[glib::object_subclass]
 impl ObjectSubclass for Window {
     // `NAME` needs to match `class` attribute of template
-    const NAME: &'static str = "MyGtkAppWindow";
+    const NAME: &'static str = "TodoWindow";
     type Type = super::Window;
     type ParentType = gtk::ApplicationWindow;
 
@@ -36,11 +38,11 @@ impl ObjectImpl for Window {
         // Call "constructed" on parent
         self.parent_constructed();
 
-        // Connect to "clicked" signal of `button`
-        self.button.connect_clicked(move |button| {
-            // Set the label to "Hello World!" after the button has been clicked on
-            button.set_label("Hello World!");
-        });
+        // Setup
+        let obj = self.obj();
+        obj.setup_tasks();
+        obj.setup_callbacks();
+        obj.setup_factory();
     }
 }
 
