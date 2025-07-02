@@ -1,6 +1,11 @@
+use gtk::gdk::Display;
+
+
 use crate::glib::clone;
+
 use gio::Settings;
 use gtk::Align;
+use gtk::CssProvider;
 use gtk::Label;
 use gtk::ListItem;
 use gtk::ListView;
@@ -17,6 +22,8 @@ use gtk::prelude::*;
 use gtk::{Application, Button, glib};
 use std::cell::Cell;
 use std::rc::Rc;
+
+
 
 mod custom_window;
 mod integer_object;
@@ -42,6 +49,7 @@ fn main() -> glib::ExitCode {
     gio::resources_register_include!("todo_1.gresource")
         .expect("Failed to register todo resources.");
 
+    app.connect_startup(|_| load_css());
     app.connect_activate(move |app| {
         // Create main window with existing functionality
         let win = CustomWindow::new(app);
@@ -63,6 +71,17 @@ fn main() -> glib::ExitCode {
     app.run()
 }
 
+fn load_css(){
+  let provider = CssProvider::new();
+  provider.load_from_string(include_str!("style.css"));
+
+  gtk::style_context_add_provider_for_display(
+         &Display::default().expect("Could not connect to a display."),
+         &provider,
+         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+     );
+}
+
 fn build_ui(win: &CustomWindow, _app: &Application, settings: &Settings) {
     let number = Rc::new(Cell::new(0));
 
@@ -71,9 +90,11 @@ fn build_ui(win: &CustomWindow, _app: &Application, settings: &Settings) {
     let button_inc = CustomButton::new();
 
     button_inc.set_margin_top(13);
+    button_inc.add_css_class("destructive-action");
     button_inc.set_margin_bottom(13);
     button_inc.set_margin_start(13);
     button_inc.set_margin_end(13);
+    button_inc.set_widget_name("button-1");
 
     let button_dec = Button::builder()
         .label("-")
