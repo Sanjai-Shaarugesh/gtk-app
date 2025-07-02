@@ -2,7 +2,7 @@ mod imp;
 
 use glib::{Object, clone};
 use gtk::subclass::prelude::*;
-use gtk::{Application, NoSelection, SignalListItemFactory, gio, glib};
+use gtk::{NoSelection, SignalListItemFactory, gio, glib};
 use gtk::{ListItem, prelude::*};
 
 use crate::task_object::TaskObject;
@@ -10,16 +10,16 @@ use crate::task_row::TaskRow;
 
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
-        @extends gtk::ApplicationWindow, gtk::Window, gtk::Widget,
+        @extends adw::ApplicationWindow, gtk::Window, gtk::Widget,
         @implements gio::ActionGroup, gio::ActionMap, gtk::Accessible, gtk::Buildable,
                     gtk::ConstraintTarget, gtk::Native, gtk::Root, gtk::ShortcutManager;
 }
 
 impl Window {
-    pub fn new(app: &Application) -> Self {
-        // Create new window
-        Object::builder().property("application", app).build()
-    }
+  pub fn new(app: &adw::Application) -> Self {
+         // Create new window
+         Object::builder().property("application", app).build()
+     }
 
     fn tasks(&self) -> gio::ListStore {
         // Get state

@@ -3,5 +3,6 @@
   <gresource prefix="/org/gtk_rs/Todo1/">
     <file compressed="true" preprocess="xml-stripblanks">task_row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
+
   </gresource>
 </gresources>

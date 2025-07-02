@@ -1,6 +1,4 @@
 use gtk::gdk::Display;
-
-
 use crate::glib::clone;
 
 use gio::Settings;
@@ -19,11 +17,10 @@ use gtk::StringObject;
 use gtk::Switch;
 use gtk::Widget;
 use gtk::prelude::*;
-use gtk::{Application, Button, glib};
+use gtk::{Button, glib};
 use std::cell::Cell;
 use std::rc::Rc;
-
-
+use adw::HeaderBar;
 
 mod custom_window;
 mod integer_object;
@@ -40,55 +37,54 @@ use custom_button::CustomButton;
 const APP_ID: &str = "org.gtk_rs.Settings";
 
 fn main() -> glib::ExitCode {
-    let settings = Settings::new(APP_ID);
-    let app = Application::builder().application_id(APP_ID).build();
-
     // Register resources for both applications
     gio::resources_register_include!("composite_templates_1.gresource")
         .expect("Failed to register resources.");
     gio::resources_register_include!("todo_1.gresource")
         .expect("Failed to register todo resources.");
 
-    app.connect_startup(|_| load_css());
-    app.connect_activate(move |app| {
-        // Create main window with existing functionality
-        let win = CustomWindow::new(app);
-        build_ui(&win, app, &settings);
-        win.connect_close_request(clone!(
-            #[strong]
-            win,
-            move |_| {
-                win.save_window_size().ok();
-                glib::Propagation::Proceed
-            }
-        ));
-        win.present();
+    // Create a new application using adw::Application like in todo
+    let app = adw::Application::builder().application_id(APP_ID).build();
 
-        // Create todo window
-        let todo_window = TodoWindow::new(app);
-        todo_window.present();
-    });
+    // Connect to signals
+    app.connect_startup(setup_shortcuts_and_css);
+    app.connect_activate(build_ui);
+
+    // Run the application
     app.run()
 }
 
-fn load_css(){
-  let provider = CssProvider::new();
-  provider.load_from_string(include_str!("style.css"));
+fn setup_shortcuts_and_css(app: &adw::Application) {
+    // Load CSS
+    load_css();
 
-  gtk::style_context_add_provider_for_display(
-         &Display::default().expect("Could not connect to a display."),
-         &provider,
-         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-     );
+    // Set up shortcuts (you can customize these as needed)
+    app.set_accels_for_action("win.filter('All')", &["<Ctrl>a"]);
+    app.set_accels_for_action("win.filter('Open')", &["<Ctrl>o"]);
+    app.set_accels_for_action("win.filter('Done')", &["<Ctrl>d"]);
 }
 
-fn build_ui(win: &CustomWindow, _app: &Application, settings: &Settings) {
-    let number = Rc::new(Cell::new(0));
+fn load_css() {
+    let provider = CssProvider::new();
+    provider.load_from_string(include_str!("style.css"));
 
+    gtk::style_context_add_provider_for_display(
+        &Display::default().expect("Could not connect to a display."),
+        &provider,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
+}
+
+fn build_ui(app: &adw::Application) {
+    let settings = Settings::new(APP_ID);
+
+    // Create a new custom window
+    let win = CustomWindow::new(&app.clone().upcast::<gtk::Application>());
+
+    let number = Rc::new(Cell::new(0));
     let (sender, receiver) = async_channel::bounded(1);
 
     let button_inc = CustomButton::new();
-
     button_inc.set_margin_top(13);
     button_inc.add_css_class("destructive-action");
     button_inc.set_margin_bottom(13);
@@ -237,6 +233,7 @@ fn build_ui(win: &CustomWindow, _app: &Application, settings: &Settings) {
     gtk_box.append(&button_box);
     gtk_box.append(&switch_box);
 
+    // Button event handlers
     button_inc.connect_clicked(clone!(
         #[strong]
         number,
@@ -273,9 +270,9 @@ fn build_ui(win: &CustomWindow, _app: &Application, settings: &Settings) {
     // Todo button handler
     button_todo.connect_clicked(clone!(
         #[weak]
-        _app,
+        app,
         move |_| {
-            let todo_window = TodoWindow::new(&_app);
+            let todo_window = TodoWindow::new(&app);
             todo_window.present();
         }
     ));
@@ -314,15 +311,21 @@ fn build_ui(win: &CustomWindow, _app: &Application, settings: &Settings) {
         }
     ));
 
-    let window = gtk::ApplicationWindow::builder()
-        .application(_app)
+
+
+    // Create additional window for scrolled content
+    let window = adw::ApplicationWindow::builder()
+        .application(app)
         .title("sanjai")
-        .child(&scrolled_window)
+        .content(&scrolled_window)
         .default_width(600)
         .default_height(300)
         .build();
 
     window.present();
+
+    // Set up the main custom window
     win.set_child(Some(&gtk_box));
     win.set_default_size(300, 400);
+    win.present();
 }

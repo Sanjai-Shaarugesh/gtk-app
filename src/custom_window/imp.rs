@@ -6,6 +6,7 @@ use std::cell::OnceCell;
 #[derive(Default)]
 pub struct Window {
     pub settings: OnceCell<Settings>,
+
 }
 
 #[glib::object_subclass]

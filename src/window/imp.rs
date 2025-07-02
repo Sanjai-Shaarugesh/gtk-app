@@ -13,6 +13,8 @@ pub struct Window {
     #[template_child]
     pub tasks_list: TemplateChild<ListView>,
     pub tasks: RefCell<Option<gio::ListStore>>,
+
+
 }
 
 // The central trait for subclassing a GObject
@@ -21,7 +23,7 @@ impl ObjectSubclass for Window {
     // `NAME` needs to match `class` attribute of template
     const NAME: &'static str = "TodoWindow";
     type Type = super::Window;
-    type ParentType = gtk::ApplicationWindow;
+    type ParentType = adw::ApplicationWindow;
 
     fn class_init(klass: &mut Self::Class) {
         klass.bind_template();
@@ -54,3 +56,5 @@ impl WindowImpl for Window {}
 
 // Trait shared by all application windows
 impl ApplicationWindowImpl for Window {}
+
+impl adw::subclass::prelude::AdwApplicationWindowImpl for Window {}
